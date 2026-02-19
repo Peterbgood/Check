@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Thailand Vacation Checklist 🇹🇭</title>
     <style>
-        :root { --primary: #008080; --accent: #ff6f61; --bg: #f4f7f6; }
+        :root { --primary: #008080; --accent: #ff6f61; --bg: #f4f7f6; --danger: #e53e3e; }
         
         body { 
             font-family: -apple-system, system-ui, sans-serif; 
             background: var(--bg); margin: 0; padding-bottom: 100px; color: #333;
+            overflow-x: hidden;
         }
 
         header { 
@@ -24,27 +25,30 @@
         .item-card { 
             background: white; margin-bottom: 12px; padding: 16px; border-radius: 14px;
             display: flex; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.1s;
+            transition: all 0.2s ease;
+            position: relative;
         }
 
         .checkbox { 
             width: 26px; height: 26px; border: 2px solid #ddd; 
             border-radius: 8px; margin-right: 15px; cursor: pointer;
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            transition: 0.2s;
         }
 
-        /* Checked State Styling */
         .checked .checkbox { background: var(--primary); border-color: var(--primary); }
         .checked .checkbox::after { content: '✓'; color: white; font-weight: bold; font-size: 14px; }
         .checked .text { text-decoration: line-through; color: #adb5bd; }
         
         .text { flex: 1; font-size: 16px; font-weight: 500; }
         
-        .btn-del { background: none; border: none; color: #ffcccc; font-size: 20px; cursor: pointer; padding: 5px; }
-        .btn-del:hover { color: var(--accent); }
+        /* Silent Delete Button (Custom UI instead of Popup) */
+        .btn-del { 
+            background: #fff5f5; color: #fc8181; width: 32px; height: 32px; 
+            border-radius: 8px; border: none; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+        }
 
-        /* Floating Action Button */
+        /* FAB */
         .fab { 
             position: fixed; bottom: 30px; right: 25px; 
             width: 65px; height: 65px; background: var(--accent); 
@@ -60,17 +64,12 @@
             background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;
             backdrop-filter: blur(4px);
         }
-        .modal-content { 
-            background: white; padding: 30px; border-radius: 24px; width: 85%; max-width: 350px; 
-        }
-        .modal-content input { 
-            width: 100%; padding: 15px; box-sizing: border-box; border: 2px solid #f0f0f0; 
-            border-radius: 12px; margin: 20px 0; font-size: 16px; outline: none;
-        }
+        .modal-content { background: white; padding: 30px; border-radius: 24px; width: 85%; max-width: 350px; }
+        .modal-content input { width: 100%; padding: 15px; border: 2px solid #f0f0f0; border-radius: 12px; margin: 20px 0; font-size: 16px; outline: none; }
         .modal-btns { display: flex; gap: 12px; }
-        .modal-btns button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
+        .modal-btns button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: bold; }
 
-        .loader { text-align: center; padding: 20px; color: #999; font-style: italic; }
+        .loader { text-align: center; padding: 20px; color: #999; }
     </style>
 </head>
 <body>
@@ -97,7 +96,6 @@
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwrbYZGkmRqOHfLdHZeU_gbsvLdC2wofrgO4VnHOogx7oOCP9GMNQlN3Yxml4tMPBz7/exec";
 
-    // 1. Load Data
     async function loadData() {
         try {
             const res = await fetch(`${SCRIPT_URL}?action=read`);
@@ -108,7 +106,6 @@
         }
     }
 
-    // 2. Render List to DOM
     function renderList(data) {
         const list = document.getElementById('checklist');
         if (data.length === 0) {
@@ -123,27 +120,45 @@
                 <div class="item-card ${isChecked ? 'checked' : ''}" id="card-${id}">
                     <div class="checkbox" onclick="toggleItem(this, '${id}')"></div>
                     <div class="text">${task}</div>
-                    <button class="btn-del" onclick="deleteItem(this, '${id}')">✕</button>
+                    <button class="btn-del" onclick="confirmDelete(this, '${id}')">✕</button>
                 </div>
             `;
         }).join('');
     }
 
-    // 3. Add Item
+    // New Delete Logic: Inline confirmation instead of browser popup
+    function confirmDelete(btn, id) {
+        if (btn.innerText === '✕') {
+            btn.innerText = 'Sure?';
+            btn.style.background = '#e53e3e';
+            btn.style.color = 'white';
+            btn.style.width = '60px';
+            // Reset button if they don't click again in 3 seconds
+            setTimeout(() => {
+                if (btn) {
+                    btn.innerText = '✕';
+                    btn.style.background = '#fff5f5';
+                    btn.style.color = '#fc8181';
+                    btn.style.width = '32px';
+                }
+            }, 3000);
+        } else {
+            const card = btn.closest('.item-card');
+            card.style.opacity = '0.3';
+            card.style.transform = 'translateX(100px)';
+            
+            fetch(`${SCRIPT_URL}?action=delete&id=${id}`, { mode: 'no-cors' })
+                .then(() => setTimeout(loadData, 1000));
+        }
+    }
+
     function addItem() {
         const input = document.getElementById('newItemInput');
         const val = input.value.trim();
         if(!val) return;
 
-        // Optimistic UI: Add to list immediately
         const list = document.getElementById('checklist');
-        const tempId = "temp-" + Date.now();
-        list.insertAdjacentHTML('beforeend', `
-            <div class="item-card" id="card-${tempId}" style="opacity: 0.5">
-                <div class="checkbox"></div>
-                <div class="text">${val} (saving...)</div>
-            </div>
-        `);
+        list.insertAdjacentHTML('beforeend', `<div class="item-card" style="opacity:0.5"><div class="text">${val}...</div></div>`);
 
         toggleModal(false);
         input.value = '';
@@ -152,38 +167,17 @@
             .then(() => setTimeout(loadData, 1500));
     }
 
-    // 4. Toggle Item (Optimistic)
     function toggleItem(el, id) {
-        const card = el.closest('.item-card');
-        card.classList.toggle('checked'); // Instant visual change
-
+        el.closest('.item-card').classList.toggle('checked');
         fetch(`${SCRIPT_URL}?action=toggle&id=${id}`, { mode: 'no-cors' })
-            .then(() => {
-                // Background refresh to ensure sync
-                setTimeout(loadData, 2000);
-            });
+            .then(() => setTimeout(loadData, 2000));
     }
 
-    // 5. Delete Item (Optimistic)
-    function deleteItem(el, id) {
-        if(!confirm("Delete this item?")) return;
-        const card = el.closest('.item-card');
-        card.style.display = 'none'; // Instant visual removal
-
-        fetch(`${SCRIPT_URL}?action=delete&id=${id}`, { mode: 'no-cors' })
-            .then(() => {
-                setTimeout(loadData, 1000);
-            });
-    }
-
-    // Modal Helper
     function toggleModal(show) {
-        const m = document.getElementById('modal');
-        m.style.display = show ? 'flex' : 'none';
+        document.getElementById('modal').style.display = show ? 'flex' : 'none';
         if(show) setTimeout(() => document.getElementById('newItemInput').focus(), 100);
     }
 
-    // Initialize
     window.onload = loadData;
 </script>
 
