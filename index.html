@@ -49,30 +49,40 @@
         }
 
         /* FAB */
-    .fab {
+   .fab {
   position: fixed;
   bottom: 30px;
-  right: 25px;
-  width: 65px;
-  height: 65px;
-  background: var(--accent);
-  border-radius: 50%;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: orange;
   color: white;
-  font-size: 35px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  line-height: 1;        /* important */
-  padding: 0;            /* remove default button padding */
-  text-align: center;
-
-  box-shadow: 0 5px 20px rgba(255, 111, 97, 0.4);
-  border: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
   cursor: pointer;
-  z-index: 99;
+  z-index: 2000;
+  border: none;
 }
+
+.fab::before,
+.fab::after {
+  content: "";
+  position: absolute;
+  background: white;
+}
+
+.fab::before {
+  width: 26px;
+  height: 3px;
+}
+
+.fab::after {
+  width: 3px;
+  height: 26px;
+}
+
 
 
         /* Modal */
