@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thailand Checklist 🇹🇭</title>
+    <style>
+        :root { --thai-teal: #008080; --thai-coral: #ff6f61; --bg: #f4f7f6; }
+        body { font-family: 'Helvetica Neue', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; width: 100%; max-width: 450px; border-radius: 15px; shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: var(--thai-teal); text-align: center; margin-bottom: 25px; font-size: 1.5rem; }
+        .input-area { display: flex; gap: 8px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px; border: 2px solid #eee; border-radius: 8px; outline: none; }
+        input:focus { border-color: var(--thai-teal); }
+        button { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .add-btn { background: var(--thai-teal); color: white; }
+        .add-btn:hover { background: #006666; }
+        ul { list-style: none; padding: 0; }
+        li { background: #fff; border-bottom: 1px solid #eee; padding: 12px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.5s ease; }
+        .delete-btn { background: #fee2e2; color: #dc2626; font-size: 0.8rem; }
+        .delete-btn:hover { background: #fecaca; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🌴 Thailand Checklist</h1>
+    
+    <div class="input-area">
+        <input type="text" id="itemInput" placeholder="e.g., Pack Waterproof Bag">
+        <button class="add-btn" onclick="addItem()">Add</button>
+    </div>
+
+    <ul id="checklist">
+        </ul>
+</div>
+
+<script>
+    // 1. YOUR PUBLISHED CSV URL (For Reading)
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQxhi0fwWJJ4OqzcpznZ9B16N9SKsMMGZXbf2s-9zCC8B6U3PymD8PQE3gjbV5E6cQJXmX5Pm5A6npK/pub?output=csv";
+    
+    // 2. YOUR APPS SCRIPT EXEC URL (For Writing/Deleting)
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWtFsk_wkFMFnFWYz3qWce6UaxCOQ6aKsuIPJXKHS0eb0vi4U78HRjnd8s0ucKC6ux/exec";
+
+    // LOAD DATA
+    async function loadItems() {
+        const response = await fetch(CSV_URL);
+        const data = await response.text();
+        const rows = data.split('\n').slice(1); // Skip header row
+        
+        const list = document.getElementById('checklist');
+        list.innerHTML = "";
+        
+        rows.forEach(row => {
+            const columns = row.split(',');
+            if (columns[0]) {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${columns[0]}</span> 
+                                <button class="delete-btn" onclick="deleteItem('${columns[0]}')">Delete</button>`;
+                list.appendChild(li);
+            }
+        });
+    }
+
+    // ADD DATA
+    function addItem() {
+        const val = document.getElementById('itemInput').value;
+        if (!val) return;
+
+        // Using fetch to trigger your Apps Script
+        fetch(`${SCRIPT_URL}?action=add&item=${encodeURIComponent(val)}`, { mode: 'no-cors' })
+        .then(() => {
+            document.getElementById('itemInput').value = "";
+            setTimeout(loadItems, 1500); // Wait for Sheet to update then reload
+        });
+    }
+
+    // DELETE DATA
+    function deleteItem(name) {
+        fetch(`${SCRIPT_URL}?action=delete&item=${encodeURIComponent(name)}`, { mode: 'no-cors' })
+        .then(() => {
+            setTimeout(loadItems, 1500);
+        });
+    }
+
+    window.onload = loadItems;
+</script>
+</body>
+</html>
