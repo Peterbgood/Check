@@ -49,14 +49,31 @@
         }
 
         /* FAB */
-        .fab { 
-            position: fixed; bottom: 30px; right: 25px; 
-            width: 65px; height: 65px; background: var(--accent); 
-            border-radius: 50%; color: white; font-size: 35px; 
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 5px 20px rgba(255, 111, 97, 0.4); border: none; cursor: pointer;
-            z-index: 99;
-        }
+    .fab {
+  position: fixed;
+  bottom: 30px;
+  right: 25px;
+  width: 65px;
+  height: 65px;
+  background: var(--accent);
+  border-radius: 50%;
+  color: white;
+  font-size: 35px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 1;        /* important */
+  padding: 0;            /* remove default button padding */
+  text-align: center;
+
+  box-shadow: 0 5px 20px rgba(255, 111, 97, 0.4);
+  border: none;
+  cursor: pointer;
+  z-index: 99;
+}
+
 
         /* Modal */
         #modal { 
