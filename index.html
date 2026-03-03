@@ -97,6 +97,45 @@
         .modal-btns button { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: bold; }
 
         .loader { text-align: center; padding: 20px; color: #999; }
+
+        /* ... existing root and body styles ... */
+
+/* UPDATED: Removed the small max-width so it can grow on desktop */
+.list-container { 
+    padding: 15px; 
+    max-width: 1200px; 
+    margin: auto; 
+    display: grid;
+    grid-template-columns: 1fr; /* Default to 1 column for mobile */
+    gap: 12px;
+}
+
+/* NEW: Desktop 3-column layout */
+@media (min-width: 768px) {
+    .list-container {
+        grid-template-columns: repeat(3, 1fr);
+        padding: 40px;
+    }
+}
+
+/* UPDATED: Remove margin-bottom from cards since Grid 'gap' handles it now */
+.item-card { 
+    background: white; 
+    margin-bottom: 0; /* Changed from 12px */
+    padding: 16px; 
+    border-radius: 14px;
+    display: flex; 
+    align-items: center; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+    position: relative;
+    height: fit-content; /* Keeps cards from stretching vertically */
+}
+
+.item-card.checked {
+    opacity: 0.6;
+    background: #fdfdfd;
+}
     </style>
 </head>
 <body>
@@ -133,25 +172,32 @@
         }
     }
 
-    function renderList(data) {
-        const list = document.getElementById('checklist');
-        if (data.length === 0) {
-            list.innerHTML = `<div class="loader">No items yet. Tap + to add one!</div>`;
-            return;
-        }
-        
-        list.innerHTML = data.map(row => {
-            const [task, status, id] = row;
-            const isChecked = String(status).toUpperCase() === 'TRUE';
-            return `
-                <div class="item-card ${isChecked ? 'checked' : ''}" id="card-${id}">
-                    <div class="checkbox" onclick="toggleItem(this, '${id}')"></div>
-                    <div class="text">${task}</div>
-                    <button class="btn-del" onclick="confirmDelete(this, '${id}')">✕</button>
-                </div>
-            `;
-        }).join('');
+   function renderList(data) {
+    const list = document.getElementById('checklist');
+    if (data.length === 0) {
+        list.innerHTML = `<div class="loader">No items yet. Tap + to add one!</div>`;
+        return;
     }
+
+    // SORTING LOGIC: Moves checked items (TRUE) to the bottom
+    const sortedData = [...data].sort((a, b) => {
+        const aChecked = String(a[1]).toUpperCase() === 'TRUE';
+        const bChecked = String(b[1]).toUpperCase() === 'TRUE';
+        return aChecked - bChecked; // False (0) comes before True (1)
+    });
+    
+    list.innerHTML = sortedData.map(row => {
+        const [task, status, id] = row;
+        const isChecked = String(status).toUpperCase() === 'TRUE';
+        return `
+            <div class="item-card ${isChecked ? 'checked' : ''}" id="card-${id}">
+                <div class="checkbox" onclick="toggleItem(this, '${id}')"></div>
+                <div class="text">${task}</div>
+                <button class="btn-del" onclick="confirmDelete(this, '${id}')">✕</button>
+            </div>
+        `;
+    }).join('');
+}
 
     // New Delete Logic: Inline confirmation instead of browser popup
     function confirmDelete(btn, id) {
